@@ -41,7 +41,7 @@ mini-rag1/
 ├── backend/
 │   ├── main.py
 │   ├── requirements.txt
-│   ├── .env
+│   ├── .env.example
 │   └── static/
 │       └── index.html
 │
@@ -53,7 +53,7 @@ mini-rag1/
 │   └── FOOD-DATA-GROUP5.csv
 │
 └── README.md
-
+```
 
 ## Screenshots
 
