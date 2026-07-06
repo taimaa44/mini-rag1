@@ -53,5 +53,10 @@ mini-rag1/
 │   └── FOOD-DATA-GROUP5.csv
 │
 └── README.md
-<img width="300"  alt="image" src="https://github.com/user-attachments/assets/019f1fb6-4bce-4c2e-b011-db2e651d3eba" />
-<img width="300"alt="image" src="https://github.com/user-attachments/assets/4ef5e6e7-03be-4a39-83a9-42d5b73d2809" />
+
+
+## Screenshots
+
+| Home Page | Analysis Result |
+|----------|----------------|
+| <img width="300" alt="Home Page" src="https://github.com/user-attachments/assets/019f1fb6-4bce-4c2e-b011-db2e651d3eba" /> | <img width="300" alt="Analysis Result" src="https://github.com/user-attachments/assets/4ef5e6e7-03be-4a39-83a9-42d5b73d2809" /> |
