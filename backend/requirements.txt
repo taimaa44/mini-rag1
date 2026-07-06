@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pandas
+groq
+python-dotenv
+deep-translator

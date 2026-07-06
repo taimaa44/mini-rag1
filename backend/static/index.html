@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini RAG Food Analyzer</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      min-height: 100vh;
+      color: white;
+      background:
+        radial-gradient(circle at top right, rgba(34, 211, 238, 0.25), transparent 35%),
+        radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.25), transparent 35%),
+        linear-gradient(135deg, #020617, #0f172a 45%, #111827);
+      padding: 30px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 35px 20px;
+      margin-bottom: 25px;
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(18px);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.35);
+      color: #67e8f9;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+
+    h1 {
+      font-size: 46px;
+      margin: 10px 0;
+      letter-spacing: -1px;
+    }
+
+    .subtitle {
+      color: #cbd5e1;
+      font-size: 18px;
+      line-height: 1.8;
+      max-width: 760px;
+      margin: auto;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.075);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(16px);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 24px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 130px;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      padding: 18px;
+      resize: none;
+      outline: none;
+      color: white;
+      background: rgba(15, 23, 42, 0.9);
+      font-size: 18px;
+      line-height: 1.7;
+    }
+
+    textarea::placeholder {
+      color: #94a3b8;
+    }
+
+    textarea:focus {
+      border-color: #22d3ee;
+      box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .chip {
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      padding: 9px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .chip:hover {
+      background: rgba(34, 211, 238, 0.18);
+      border-color: rgba(34, 211, 238, 0.4);
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      font-weight: 800;
+      transition: 0.2s;
+    }
+
+    .main-btn {
+      width: 100%;
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 18px;
+      color: white;
+      font-size: 19px;
+      background: linear-gradient(135deg, #06b6d4, #2563eb);
+      box-shadow: 0 15px 35px rgba(37, 99, 235, 0.35);
+    }
+
+    .main-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 40px rgba(37, 99, 235, 0.45);
+    }
+
+    .loading {
+      margin-top: 18px;
+      color: #67e8f9;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .match {
+      position: relative;
+      overflow: hidden;
+      padding: 18px;
+      margin-top: 14px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
+      border: 1px solid rgba(34, 211, 238, 0.22);
+    }
+
+    .match-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .food-name {
+      font-size: 21px;
+      font-weight: 900;
+    }
+
+    .score {
+      padding: 8px 13px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .score.good {
+      color: #86efac;
+      background: rgba(34, 197, 94, 0.16);
+      border: 1px solid rgba(34, 197, 94, 0.45);
+    }
+
+    .score.medium {
+      color: #fde68a;
+      background: rgba(245, 158, 11, 0.16);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+    }
+
+    .score.bad {
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.16);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+    }
+
+    .nutrition-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .nutrition-item {
+      padding: 10px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #e2e8f0;
+      font-size: 14px;
+    }
+
+    .similar-btn {
+      margin-top: 15px;
+      padding: 11px 14px;
+      border-radius: 14px;
+      color: white;
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    }
+
+    .similar-box {
+      display: none;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+    }
+
+    .similar-item {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.08);
+      line-height: 1.7;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+    }
+
+    .comparison-item {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      line-height: 1.8;
+    }
+
+    .comparison-item strong {
+      color: #67e8f9;
+    }
+
+    .recommendation {
+      white-space: pre-wrap;
+      padding: 20px;
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(6, 182, 212, 0.10));
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: #dcfce7;
+      line-height: 2;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .analysis {
+      white-space: pre-wrap;
+      line-height: 2;
+      font-size: 17px;
+      color: #e2e8f0;
+    }
+
+    .empty {
+      color: #94a3b8;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        padding: 18px;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
+
+      .nutrition-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <section class="hero">
+      <div class="badge">Mini RAG Project</div>
+      <h1>🍔 Food Intelligence Analyzer</h1>
+      <p class="subtitle">
+        نظام بسيط يحلل الأطعمة من ملفات CSV، يسترجع البيانات المناسبة، ثم يستخدم Groq لتوليد تحليل غذائي  واضح ومرتب.
+      </p>
+    </section>
+
+    <div class="layout">
+
+      <div>
+        <div class="card">
+          <h2>🍽️ Food Input</h2>
+
+          <textarea id="foodInput" placeholder="اكتب مثال: banana and apple أو موز و تفاح"></textarea>
+
+          <div class="chips">
+            <div class="chip" onclick="setExample('banana')">banana</div>
+            <div class="chip" onclick="setExample('apple')">apple</div>
+            <div class="chip" onclick="setExample('banana and apple')">banana and apple</div>
+            <div class="chip" onclick="setExample('burger')">burger</div>
+          </div>
+
+          <button class="main-btn" onclick="analyzeFood()">🚀 Analyze Food</button>
+
+          <div id="loading" class="loading"></div>
+        </div>
+
+        <div class="card">
+          <h2>🥗 Main Food Results</h2>
+          <div id="matches" class="empty">النتائج الأساسية ستظهر هنا.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>📊 Smart Comparison</h2>
+          <div id="comparison" class="empty">المقارنة ستظهر هنا بعد التحليل.</div>
+        </div>
+
+        <div class="card">
+          <h2>🎯 Final Recommendation</h2>
+          <div id="recommendation" class="recommendation">التوصية النهائية ستظهر هنا.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <h2>🤖 AI Nutrition Analysis</h2>
+      <div id="analysis" class="analysis">التحليل الذكي سيظهر هنا.</div>
+    </div>
+
+  </div>
+
+  <script>
+    function setExample(text) {
+      document.getElementById("foodInput").value = text;
+    }
+
+    function scoreClass(score) {
+      if (score >= 8) return "good";
+      if (score >= 6) return "medium";
+      return "bad";
+    }
+
+    async function analyzeFood() {
+      const food = document.getElementById("foodInput").value;
+      const loadingDiv = document.getElementById("loading");
+      const matchesDiv = document.getElementById("matches");
+      const analysisDiv = document.getElementById("analysis");
+      const comparisonDiv = document.getElementById("comparison");
+      const recommendationDiv = document.getElementById("recommendation");
+
+      if (!food.trim()) {
+        analysisDiv.innerText = "⚠️ اكتب اسم الطعام أولاً.";
+        return;
+      }
+
+      loadingDiv.innerText = "⏳ جاري تحليل الطعام...";
+      matchesDiv.innerHTML = "";
+      comparisonDiv.innerHTML = "";
+      recommendationDiv.innerText = "";
+      analysisDiv.innerText = "";
+
+      try {
+        const response = await fetch("/analyze", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            text: food
+          })
+        });
+
+        const data = await response.json();
+
+        loadingDiv.innerText = "";
+
+        if (data.error) {
+          analysisDiv.innerText = "❌ " + data.error;
+          return;
+        }
+
+        matchesDiv.innerHTML = "";
+
+        data.matches.forEach((item, index) => {
+          const encodedFood = encodeURIComponent(item.food);
+          const cls = scoreClass(item.health_score);
+
+          matchesDiv.innerHTML += `
+            <div class="match">
+              <div class="match-header">
+                <div class="food-name">🍽️ ${item.food}</div>
+                <div class="score ${cls}">⭐ ${item.health_score}/10</div>
+              </div>
+
+              <div class="nutrition-grid">
+                <div class="nutrition-item">🔥 Calories: ${item.calories}</div>
+                <div class="nutrition-item">🥩 Protein: ${item.protein}</div>
+                <div class="nutrition-item">🍞 Carbs: ${item.carbs}</div>
+                <div class="nutrition-item">🧈 Fat: ${item.fat}</div>
+                <div class="nutrition-item">🍬 Sugars: ${item.sugars}</div>
+                <div class="nutrition-item">🌾 Fiber: ${item.fiber}</div>
+              </div>
+
+              <button class="similar-btn" onclick="showSimilar('${encodedFood}', ${index})">
+                🔎 Show Similar Foods
+              </button>
+
+              <div id="similar-${index}" class="similar-box"></div>
+            </div>
+          `;
+        });
+
+        const comparison = data.comparison;
+
+        comparisonDiv.innerHTML = `
+          <div class="comparison-grid">
+            <div class="comparison-item">
+              ✅ <strong>Healthiest</strong><br>
+              ${comparison.healthiest}<br>
+              ⭐ ${comparison.healthiest_score}/10
+            </div>
+
+            <div class="comparison-item">
+              🔥 <strong>Highest Calories</strong><br>
+              ${comparison.highest_calories}<br>
+              ${comparison.highest_calories_value} calories
+            </div>
+
+            <div class="comparison-item">
+              🍬 <strong>Highest Sugar</strong><br>
+              ${comparison.highest_sugar}<br>
+              ${comparison.highest_sugar_value}g sugar
+            </div>
+
+            <div class="comparison-item">
+              🌾 <strong>Highest Fiber</strong><br>
+              ${comparison.highest_fiber}<br>
+              ${comparison.highest_fiber_value}g fiber
+            </div>
+
+            <div class="comparison-item">
+              🥩 <strong>Highest Protein</strong><br>
+              ${comparison.highest_protein}<br>
+              ${comparison.highest_protein_value}g protein
+            </div>
+
+            <div class="comparison-item">
+              🧈 <strong>Lowest Fat</strong><br>
+              ${comparison.lowest_fat}<br>
+              ${comparison.lowest_fat_value}g fat
+            </div>
+          </div>
+        `;
+
+        recommendationDiv.innerText = data.final_recommendation;
+        analysisDiv.innerText = data.analysis;
+
+      } catch (error) {
+        loadingDiv.innerText = "";
+        analysisDiv.innerText = "❌ صار خطأ بالاتصال مع السيرفر.";
+      }
+    }
+
+    async function showSimilar(encodedFood, index) {
+      const food = decodeURIComponent(encodedFood);
+      const similarDiv = document.getElementById("similar-" + index);
+
+      similarDiv.style.display = "block";
+      similarDiv.innerHTML = "⏳ جاري جلب الأطعمة المشابهة...";
+
+      try {
+        const response = await fetch("/similar?food=" + encodedFood);
+        const data = await response.json();
+
+        if (!data.similar || data.similar.length === 0) {
+          similarDiv.innerHTML = "لا توجد أطعمة مشابهة.";
+          return;
+        }
+
+        similarDiv.innerHTML = "<strong>🔎 أطعمة مشابهة لـ " + food + ":</strong>";
+
+        data.similar.forEach(item => {
+          const cls = scoreClass(item.health_score);
+
+          similarDiv.innerHTML += `
+            <div class="similar-item">
+              <strong>🍽️ ${item.food}</strong><br>
+              🔥 Calories: ${item.calories}<br>
+              🥩 Protein: ${item.protein}<br>
+              🍞 Carbs: ${item.carbs}<br>
+              🧈 Fat: ${item.fat}<br>
+              <span class="score ${cls}">⭐ ${item.health_score}/10</span>
+            </div>
+          `;
+        });
+
+      } catch (error) {
+        similarDiv.innerHTML = "❌ صار خطأ أثناء جلب الأطعمة المشابهة.";
+      }
+    }
+  </script>
+
+</body>
+</html>
